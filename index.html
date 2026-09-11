@@ -41,6 +41,8 @@ function todayISO(){let p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Mex
 function sessionLabel(session){return formatDate(session.session_date)+' · '+formatTime(session.start_time)}
 function reservationRows(sessionId){let all=state.reservations.filter(r=>r.session_id===sessionId),groups=new Map();all.forEach(r=>{let list=groups.get(r.person_id)||[];list.push(r);groups.set(r.person_id,list)});return [...groups.values()].map(list=>{let current=list.find(r=>r.status!=='cancelled')||list.slice().sort((a,b)=>String(b.updated_at||b.created_at).localeCompare(String(a.updated_at||a.created_at)))[0];return {...current,historyCount:list.length}})}
 function reservationCount(session){let active=new Set(state.reservations.filter(r=>r.session_id===session.id&&r.status!=='cancelled').map(r=>r.person_id));return active.size+'/'+(session.capacity||0)}
+function activeReservations(sessionId){return state.reservations.filter(r=>String(r.session_id)===String(sessionId)&&r.status!=='cancelled')}
+
 function open(id){$(id).classList.remove('hidden')}function close(id){$(id).classList.add('hidden')}
 async function load(){let memberships=await api('rpc/sf_my_memberships');let visible=await api('branches?select=id,name,studio_id&order=name');let pick=visible.find(b=>b.studio_id===SANDBOX_STUDIO)||visible.find(b=>memberships.some(m=>m.studio_id===b.studio_id));if(!pick)throw Error('Sin sucursales autorizadas');state.studio=pick.studio_id;state.role=memberships.find(m=>m.studio_id===state.studio)?.role||'staff';[state.branches,state.people,state.services,state.sessions,state.schedules,state.assignments,state.packages,state.packageRules,state.dashboardSettings,state.personPackages,state.payments,state.reservations]=await Promise.all([api('branches?select=*&studio_id=eq.'+state.studio+'&order=name'),api('people?select=*&studio_id=eq.'+state.studio+'&order=created_at.desc'),api('services?select=*&studio_id=eq.'+state.studio+'&order=created_at'),api('sessions?select=*&studio_id=eq.'+state.studio+'&order=session_date,start_time'),api('service_schedules?select=*&studio_id=eq.'+state.studio+'&order=weekday,start_time'),api('studio_member_branches?select=branch_id,active&studio_id=eq.'+state.studio),api('packages?select=*&studio_id=eq.'+state.studio+'&order=created_at'),api('package_eligibility_rules?select=*&studio_id=eq.'+state.studio),api('studio_dashboard_settings?select=*&studio_id=eq.'+state.studio),api('person_packages?select=*&studio_id=eq.'+state.studio+'&order=created_at.desc'),api('payments?select=*&studio_id=eq.'+state.studio+'&order=paid_at.desc'),api('reservations?select=*&order=created_at.desc')]);render()}
 function personLabel(id){let p=state.people.find(x=>x.id===id);return p?.name||'Alumna'}
@@ -134,6 +136,16 @@ main{padding-bottom:126px}
 .todayMock .item .muted{display:block;line-height:1.3;overflow-wrap:anywhere}
 .nav{min-height:56px}
 @media(max-width:760px){main{padding-bottom:126px}.scopePanel{margin-bottom:86px!important}.todayMock .sectionHead{gap:10px}.todayMock .sectionHead h2{font-size:16px}.todayMock .sectionHead .textlink{font-size:10px;padding:8px 9px}.financeTotal{gap:5px 8px}.financeGrid{gap:6px}.financeGrid>div{padding:8px 7px}.scopePanel .row b{max-width:58%}.nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;justify-content:stretch}.navmenu{min-width:0}.nav>button,.navmenu>.navtoggle{width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:9px;padding:7px 3px}.view{padding-bottom:86px!important}#bookings{padding-bottom:108px!important}}
+
+/* M2 QA mobile geometry: keep date controls and capacity text in separate tracks. */
+.dateTabs{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px;align-items:stretch}
+.dateTab{min-height:38px;line-height:1.1;padding:8px 10px;white-space:nowrap;flex:0 0 auto}
+.capacityRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.capacityRow:before{grid-column:1;grid-row:1;width:100%;flex:none;order:0}
+.capacityRow span{grid-column:1;grid-row:1;margin-right:0;max-width:100%;order:0;pointer-events:none}
+.capacityRow b{grid-column:2;grid-row:1;order:0;z-index:2}
+.todayMock .mockSession{overflow:hidden}
+@media(max-width:760px){.dateTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.dateTab{width:100%;padding:8px 5px;text-align:center;font-size:11px}.todayMock .todayInstruction{line-height:1.35;margin:12px 0 16px}}
 </style>
 
 <script>
