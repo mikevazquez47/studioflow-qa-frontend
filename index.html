@@ -144,7 +144,7 @@ $('assignmentForm').onsubmit=async e=>{e.preventDefault();let pack=state.package
     }
     return originalFetch(input,init);
   };
-  const selectors='#newPerson,#newActivity,#newPackage,#newAssignment,#newPayment,#newReservation,[data-create-for],[data-edit-for],[data-delete-for],[data-edit-session],[data-status-session],[data-edit-package],[data-manual-reservation],[data-res-cancel],[data-cancel-session],[data-new-status]';
+  const selectors='#todayNewReservation,#newPerson,#newActivity,#newPackage,#newAssignment,#newPayment,#newReservation,[data-shortcut=\"person\"],[data-shortcut=\"session\"],[data-shortcut=\"reservation\"],[data-shortcut=\"payment\"],[data-create-for],[data-edit-for],[data-delete-for],[data-edit-session],[data-status-session],[data-edit-package],[data-manual-reservation],[data-res-cancel],[data-cancel-session],[data-new-status]';
   function hideWrites(){
     document.querySelectorAll(selectors).forEach(el=>{el.hidden=true;el.setAttribute('aria-hidden','true')});
     document.querySelectorAll('#personModal button[type=submit],#activityModal button[type=submit],#packageModal button[type=submit],#assignmentModal button[type=submit],#paymentModal button[type=submit],#reservationModal button[type=submit]').forEach(el=>{el.hidden=true});
