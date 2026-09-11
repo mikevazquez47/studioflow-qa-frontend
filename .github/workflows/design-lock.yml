@@ -1,0 +1,34 @@
+name: Locked UI
+
+on:
+  push:
+    branches: [m2-agenda-reservas-discovery]
+  pull_request:
+    branches: [m2-agenda-reservas-discovery]
+
+jobs:
+  design-lock:
+    name: Verify locked visual shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check protected UI region
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = '</main><script>'
+          if marker not in text:
+              raise SystemExit('FAIL: protected UI marker missing')
+          protected = text.split(marker, 1)[0] + '</main>'
+          actual = hashlib.sha256(protected.encode('utf-8')).hexdigest()
+          expected = '47f5e96042a8c59ad1c9d3c852cd97a7123155569a9d5bf00235dac2eab7098b'
+          if actual != expected:
+              raise SystemExit(f'FAIL: locked visual shell changed (expected {expected}, got {actual})')
+          if text.startswith('Source: Web Fetch'):
+              raise SystemExit('FAIL: external source wrapper found in index.html')
+          print(f'PASS: locked visual shell {actual}')
+          PY
