@@ -66,7 +66,7 @@ async function cancelReservation(id){let target=state.reservations.find(x=>x.id=
 function ensureRescheduleModal(){if($('qaRescheduleModal'))return;let m=document.createElement('div');m.id='qaRescheduleModal';m.className='modalback hidden';m.innerHTML='<div class="modal"><div class="modalhead"><h2>Reprogramar reserva</h2><button type="button" class="close" data-qa-reschedule-close>×</button></div><p id="qaRescheduleSummary" class="muted"></p><label>Nueva sesión<select id="qaRescheduleSession"></select></label><p id="qaRescheduleMessage" class="muted small"></p><div class="modalactions"><button type="button" class="secondary" data-qa-reschedule-close>Cancelar</button><button type="button" class="primary" id="qaRescheduleSubmit">Guardar cambio</button></div></div>';document.body.appendChild(m);m.querySelectorAll('[data-qa-reschedule-close]').forEach(b=>b.onclick=()=>m.classList.add('hidden'));$('qaRescheduleSubmit').onclick=saveReschedule}
 function openRescheduleModal(id){ensureRescheduleModal();let r=state.reservations.find(x=>x.id===id),from=state.sessions.find(x=>x.id===r?.session_id);if(!r||!from)return;let options=state.sessions.filter(x=>x.status==='active'&&x.id!==from.id&&x.service_id===from.service_id&&x.branch_id===from.branch_id&&x.session_date>=todayISO()&&activeReservations(x.id).length<Number(x.capacity||0)).sort((a,b)=>String(a.session_date+a.start_time).localeCompare(String(b.session_date+b.start_time)));reschedulingReservationId=id;$('qaRescheduleSession').innerHTML=options.map(x=>'<option value="'+x.id+'">'+esc(sessionLabel(x))+' · '+esc(x.name||'Sesión')+'</option>').join('')||'<option value="">No hay sesiones compatibles con cupo</option>';$('qaRescheduleSummary').textContent='De '+sessionLabel(from)+' a una sesión compatible. La reserva original se conservará en el historial.';$('qaRescheduleMessage').textContent=options.length?'La operación será atómica e idempotente.':'No encontramos otra sesión compatible con cupo.';$('qaRescheduleModal').classList.remove('hidden')}
 async function saveReschedule(){let id=reschedulingReservationId,target=$('qaRescheduleSession')?.value,r=state.reservations.find(x=>x.id===id),from=state.sessions.find(x=>x.id===r?.session_id),to=state.sessions.find(x=>x.id===target);if(!r||!from||!to){$('qaRescheduleMessage').textContent='Selecciona una sesión disponible.';return}if(activeReservations(to.id).length>=Number(to.capacity||0)){$('qaRescheduleMessage').textContent='La sesión seleccionada ya no tiene cupo.';return}let keyId=id+'|'+to.id,key=rescheduleRequestKeys.get(keyId)||crypto.randomUUID();rescheduleRequestKeys.set(keyId,key);$('qaRescheduleSubmit').disabled=true;$('qaRescheduleMessage').textContent='Guardando…';try{await api('rpc/student_reschedule_reservation_with_key',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({target_reservation:id,target_session:to.id,target_resource:null,target_reason:'Reprogramación desde agenda QA',target_idempotency_key:key})});rescheduleRequestKeys.delete(keyId);reschedulingReservationId=null;$('qaRescheduleModal').classList.add('hidden');await load();msg('Reserva reprogramada; se conservó el historial.',true)}catch(x){$('qaRescheduleMessage').textContent='No se pudo reprogramar. La reserva original permanece intacta.'}finally{if($('qaRescheduleSubmit'))$('qaRescheduleSubmit').disabled=false}}
-function bindTodayControls(){document.querySelectorAll('[data-toggle-session]').forEach(b=>b.onclick=()=>document.querySelector('[data-session-card=\"'+b.dataset.toggleSession+'\"]')?.classList.toggle('open'));document.querySelectorAll('[data-res-status]').forEach(b=>b.onclick=()=>updateReservation(b.dataset.resStatus,{attendance_status:b.dataset.attendance},b.dataset.attendance==='attended'?'Asistencia registrada.':'Marcada como no asistencia.'));document.querySelectorAll('[data-res-cancel]').forEach(b=>b.onclick=()=>cancelReservation(b.dataset.resCancel));document.querySelectorAll('[data-reschedule]').forEach(b=>b.onclick=()=>openRescheduleModal(b.dataset.reschedule));document.querySelectorAll('[data-cancel-session]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Cancelar esta clase?'))return;let session=state.sessions.find(x=>x.id===b.dataset.cancelSession),previous=session?.status;if(!session)return;session.status='cancelled';render();try{await api('sessions?id=eq.'+session.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled'})});msg('Clase cancelada. El historial se conservó.',true)}catch(x){session.status=previous;render();msg('No se pudo cancelar la clase.')}});document.querySelectorAll('[data-manual-reservation]').forEach(b=>b.onclick=()=>openReservationModal(b.dataset.manualReservation));if($('refreshToday'))$('refreshToday').onclick=load;if($('bookingDateFilter'))$('bookingDateFilter').onchange=()=>{renderBookings();bindTodayControls()};if($('bookingStatusFilter'))$('bookingStatusFilter').onchange=()=>{renderBookings();bindTodayControls()}}
+function bindTodayControls(){document.querySelectorAll('[data-toggle-session]').forEach(b=>b.onclick=()=>document.querySelector('[data-session-card=\"'+b.dataset.toggleSession+'\"]')?.classList.toggle('open'));document.querySelectorAll('[data-res-status]').forEach(b=>b.onclick=()=>updateReservation(b.dataset.resStatus,{attendance_status:b.dataset.attendance},b.dataset.attendance==='attended'?'Asistencia registrada.':'Marcada como no asistencia.'));document.querySelectorAll('[data-res-cancel]').forEach(b=>b.onclick=()=>cancelReservation(b.dataset.resCancel));document.querySelectorAll('[data-cancel-session]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Cancelar esta clase?'))return;let session=state.sessions.find(x=>x.id===b.dataset.cancelSession),previous=session?.status;if(!session)return;session.status='cancelled';render();try{await api('sessions?id=eq.'+session.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled'})});msg('Clase cancelada. El historial se conservó.',true)}catch(x){session.status=previous;render();msg('No se pudo cancelar la clase.')}});document.querySelectorAll('[data-manual-reservation]').forEach(b=>b.onclick=()=>openReservationModal(b.dataset.manualReservation));if($('refreshToday'))$('refreshToday').onclick=load;if($('bookingDateFilter'))$('bookingDateFilter').onchange=()=>{renderBookings();bindTodayControls()};if($('bookingStatusFilter'))$('bookingStatusFilter').onchange=()=>{renderBookings();bindTodayControls()}}
 function renderBookings(){let date=$('bookingDateFilter')?.value||'',status=$('bookingStatusFilter')?.value||'all',rows=state.reservations.filter(r=>{let session=state.sessions.find(x=>x.id===r.session_id),current=r.status==='cancelled'?'cancelled':r.attendance_status==='attended'?'attended':r.attendance_status==='no_show'?'no_show':'reserved';return session&&(!date||session.session_date===date)&&(status==='all'||current===status)}).sort((a,b)=>{let sa=state.sessions.find(x=>x.id===a.session_id),sb=state.sessions.find(x=>x.id===b.session_id);return String(sa?.session_date+sa?.start_time).localeCompare(String(sb?.session_date+sb?.start_time))});$('bookingList').innerHTML=rows.map(r=>{let session=state.sessions.find(x=>x.id===r.session_id),service=state.services.find(x=>x.id===session?.service_id),current=r.status==='cancelled'?'Cancelada':r.attendance_status==='attended'?'Asistió':r.attendance_status==='no_show'?'No asistió':'Pendiente';return '<div class="item"><div><strong>'+esc(personLabel(r.person_id))+'</strong><span class="muted">'+esc(service?.name||session?.name||'Sesión')+' · '+esc(session?sessionLabel(session):'')+' · '+esc(attendeePaymentInfo(r))+' · '+current+'</span></div><div class="itemactions"><span class="pill">'+(session?reservationCount(session):'')+'</span>'+(r.status!=='cancelled'?'<button class="secondary" data-res-status="'+r.id+'" data-attendance="attended">Asistió</button><button class="ghost" data-res-status="'+r.id+'" data-attendance="no_show">No asistió</button><button class="ghost" data-reschedule="'+r.id+'">Reprogramar</button><button class="ghost" data-res-cancel="'+r.id+'">Cancelar</button>':'')+'</div></div>'}).join('')||'<div class="empty">No hay reservas con estos filtros.</div>'}
 function profilePerson(){return state.people.find(p=>p.auth_user_id===auth?.user?.id||p.user_id===auth?.user?.id||p.email===auth?.user?.email)||state.people[0]}
 function weekStartISO(value){let d=new Date(value+'T12:00:00'),day=d.getDay();d.setDate(d.getDate()-(day===0?6:day-1));return d.toISOString().slice(0,10)}
@@ -110,15 +110,40 @@ $('reservationForm').onsubmit=async e=>{e.preventDefault();let usePackage=$('res
 $('assignmentForm').onsubmit=async e=>{e.preventDefault();let pack=state.packages.find(p=>p.id===$('assignmentPackage').value),today=todayISO(),end=new Date();end.setDate(end.getDate()+Number(pack?.validity_days||30));try{await api('person_packages',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({studio_id:state.studio,person_id:$('assignmentPerson').value,package_id:pack.id,credits_total:pack.total_credits||1,credits_remaining:pack.total_credits||1,paid_at:today,start_date:today,expires_at:end.toISOString().slice(0,10),status:'active'})});close('assignmentModal');e.target.reset();await load();msg('Paquete asignado correctamente.',true)}catch(x){msg('No se pudo asignar el paquete.')}};
 restoreAuth();
 </script>
+<style id="m2-visual-alignment">
+/* M2 QA visual polish: preserve the approved Demeter language while preventing overlap. */
+main{padding-bottom:126px}
+.todayMock .sectionHead,.todaySectionHead{align-items:center}
+.todayMock .sectionHead h2{min-width:0;line-height:1.15}
+.todayMock .sectionHead .textlink{flex:0 0 auto;white-space:nowrap}
+.financeTotal{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:baseline}
+.financeTotal span{min-width:0;line-height:1.2}
+.financeTotal strong{white-space:nowrap;line-height:1.1}
+.financeTotal small{grid-column:1/-1;display:block;line-height:1.25;color:var(--sf-muted)}
+.financeGrid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.financeGrid>div{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.financeGrid strong,.financeGrid span{line-height:1.15}
+.scopePanel{margin-bottom:96px!important}
+.scopePanel .row{align-items:center}
+.scopePanel .row span{min-width:0;flex:1}
+.scopePanel .row b{max-width:62%;text-align:right;overflow-wrap:anywhere;line-height:1.25}
+.todayMock .item{align-items:flex-start}
+.todayMock .item>div:first-child{min-width:0;flex:1}
+.todayMock .item .muted{display:block;line-height:1.3;overflow-wrap:anywhere}
+.nav{min-height:56px}
+@media(max-width:760px){main{padding-bottom:126px}.scopePanel{margin-bottom:86px!important}.todayMock .sectionHead{gap:10px}.todayMock .sectionHead h2{font-size:16px}.todayMock .sectionHead .textlink{font-size:10px;padding:8px 9px}.financeTotal{gap:5px 8px}.financeGrid{gap:6px}.financeGrid>div{padding:8px 7px}.scopePanel .row b{max-width:58%}}
+</style>
+
 <script>
-/* StudioFlow M0 preview: client-side guardrail and UI are read-only. */
+/* StudioFlow preview guardrail: M0 writes remain blocked; M2 keyed rescheduling is allowed. */
 (()=>{
   const originalFetch=window.fetch.bind(window);
   window.fetch=(input,init={})=>{
     const url=typeof input==='string'?input:(input&&input.url)||'';
     const method=String(init.method||((input&&input.method)||'GET')).toUpperCase();
     if(/\/rest\/v1\//.test(url)&&['POST','PATCH','PUT','DELETE'].includes(method)){
-      return Promise.reject(new Error('M0 preview is read-only'));
+      const isM2Reschedule=/\/rest\/v1\/rpc\/student_reschedule_reservation_with_key(?:\?|$)/.test(url);
+      if(!isM2Reschedule)return Promise.reject(new Error('M0 preview is read-only'));
     }
     return originalFetch(input,init);
   };
@@ -130,5 +155,14 @@ restoreAuth();
   new MutationObserver(hideWrites).observe(document.documentElement,{subtree:true,childList:true});
   hideWrites();
 })();
+
+// Delegate the M2 reschedule action so it survives every bookings re-render.
+document.addEventListener('click',e=>{
+  const button=e.target.closest('[data-reschedule]');
+  if(!button)return;
+  e.preventDefault();
+  e.stopPropagation();
+  openRescheduleModal(button.dataset.reschedule);
+});
 </script>
 </body></html>
