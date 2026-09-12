@@ -12,25 +12,7 @@
 body,main{color:#f8f4fa}#login{color:#f8f4fa;background:linear-gradient(145deg,#58518bcc,#403b73d1);border-color:#ffffff14}#login .muted{color:#c5bfd4}#login .eyebrow{color:#46c7db}.view .card,.view .card p,.view .card label,.view .card span,.view .card div,.todayMock .mockPanel,.todayMock .mockPanel p,.todayMock .mockPanel span,.todayMock .mockPanel div,.todayMock .mockSession{color:#f8f4fa}.view .card .muted,.todayMock .mockPanel .muted,.todayMock .mockSession .muted{color:#c5bfd4}.view .card .eyebrow,.todayMock .mockPanel .eyebrow{color:#46c7db}.view .card input,.view .card select,.view .card textarea,.modal input,.modal select,.modal textarea{color:#fff;background:#ffffff1a;border-color:#ffffff26}.modal{color:#f8f4fa}.modal p,.modal label,.modal span,.modal div{color:#f8f4fa}.modal .muted{color:#c5bfd4}.primary{color:#2b2858}.secondary{color:#fff}.empty{color:#c5bfd4!important}.profileSub{color:#c5bfd4!important}
 
 .studentProfile .packageCard,.studentProfile .nextGoal{background:linear-gradient(145deg,#f4c59e,#edaa8e)!important;color:#2b2858!important}.studentProfile .packageCard *,.studentProfile .nextGoal *{color:#2b2858!important}
-.loginModes{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:15px 0 4px}.loginMode{min-height:38px;padding:8px 7px;background:#ffffff12;color:#c5bfd4;border:1px solid #ffffff1a;font-size:11px;border-radius:13px}.loginMode.active{background:#f39bb2;color:#2b2858;border-color:#f39bb2}.studentProfile{padding-bottom:88px!important}#profile{padding-bottom:88px!important}</style>
-<style id="m2-bottom-safe-area">
-/* M2 QA layout-only guard: keep global messages and retry states above the bottom nav. */
-#app{padding-bottom:24px}
-#appMsg{margin-bottom:24px;line-height:1.35}
-@media (max-width:760px){
-  main{padding-bottom:calc(132px + env(safe-area-inset-bottom))}
-  #app{padding-bottom:28px}
-  #appMsg{margin-bottom:28px}
-  .view{padding-bottom:120px!important}
-}
-@media (min-width:761px) and (max-width:1100px){
-  main{padding-bottom:132px}
-  #app{padding-bottom:28px}
-  #appMsg{margin-bottom:28px}
-  .view{padding-bottom:120px!important}
-}
-</style>
-</head>
+.loginModes{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:15px 0 4px}.loginMode{min-height:38px;padding:8px 7px;background:#ffffff12;color:#c5bfd4;border:1px solid #ffffff1a;font-size:11px;border-radius:13px}.loginMode.active{background:#f39bb2;color:#2b2858;border-color:#f39bb2}.studentProfile{padding-bottom:88px!important}#profile{padding-bottom:88px!important}</style></head>
 <body><main>
 <div class="brand"><div class="logo">S</div>StudioFlow <span class="muted small">· sandbox seguro</span></div>
 <section id="login" class="card"><div class="eyebrow" id="loginEyebrow">Acceso de alumnas</div><h1 class="h1" id="loginTitle">Entra a tu estudio</h1><p class="muted" id="loginIntro">Ingresa con el número de celular registrado en Demeter.</p><div class="loginModes"><button type="button" class="loginMode active" data-login-mode="student">Alumna · celular</button><button type="button" class="loginMode" data-login-mode="staff">Equipo · correo</button></div><form id="loginForm"><label id="loginIdentifierLabel">Número de celular</label><input id="email" type="tel" inputmode="tel" autocomplete="tel" placeholder="55 1234 5678" required><p id="loginQaHint" class="muted small">En esta cuenta QA temporal también puedes usar el correo de prueba.</p><label>Contraseña</label><input id="password" type="password" autocomplete="current-password" required><button class="primary full" type="submit">Entrar al sandbox</button></form><div id="loginMsg" class="msg"></div></section>
@@ -215,4 +197,22 @@ window.addEventListener('click',e=>{
   openRescheduleModal(button.dataset.reschedule);
 },true);
 </script>
+
+<style id="m2-bottom-safe-area">
+/* M2 QA layout-only guard: keep global messages and retry states above the bottom nav. */
+#app{padding-bottom:24px}
+#appMsg{margin-bottom:24px;line-height:1.35}
+@media (max-width:760px){
+  main{padding-bottom:calc(132px + env(safe-area-inset-bottom))}
+  #app{padding-bottom:28px}
+  #appMsg{margin-bottom:28px}
+  .view{padding-bottom:120px!important}
+}
+@media (min-width:761px) and (max-width:1100px){
+  main{padding-bottom:132px}
+  #app{padding-bottom:28px}
+  #appMsg{margin-bottom:28px}
+  .view{padding-bottom:120px!important}
+}
+</style>
 </body></html>
